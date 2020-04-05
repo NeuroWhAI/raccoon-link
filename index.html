@@ -70,6 +70,10 @@
             margin-left: 1em;
             width: 6em;
         }
+        .btnShare {
+            margin-left: 0.2em;
+            width: 6em;
+        }
         .btnBox button {
             border-radius: 50%;
             width: 2em;
@@ -132,7 +136,7 @@
         var param = location.search.substr(location.search.indexOf('?') + 1);
         var kv = param.split('=');
         if (kv.length == 2 && kv[0] == "floor") {
-            moveFloor(kv[1]);
+            parseFloor(kv[1], true);
         }
 
         var buttons = [
@@ -141,11 +145,12 @@
         ];
         var arrows = "↑↗→↘↓↙←↖";
 
-        function moveFloor(floor) {
+        function parseFloor(floor, moveOrCopy) {
             var inputs = floor.split('-');
             for (var i=0; i<inputs.length; ++i) {
                 inputs[i] = decodeURIComponent(inputs[i]);
             }
+            floor = inputs.join('-');
 
             var last = inputs[inputs.length - 1];
             if (last.length < 3) {
@@ -251,7 +256,12 @@
 
             url = "http://" + url;
 
-            window.location = url;
+            if (moveOrCopy) {
+                window.location = url;
+            }
+            else {
+                copyTextToClipboard(location.origin + "/?floor=" + floor);
+            }
 
             return true;
         }
@@ -315,6 +325,7 @@
             <div class="dialBar"></div>
         </div>
         <button class="btnGo" onclick="onButtonGoClicked();">GO</button>
+        <button class="btnShare" onclick="onButtonShareClicked();">SHARE</button>
     </div>
     <script>
         var arrowChars = "↑↗→↘↓↙←↖";
@@ -368,13 +379,56 @@
         }
 
         function onButtonGoClicked() {
-            var panel = document.getElementById('txtInput');
-            var arrow1 = document.getElementById('txtArrow1');
-            var arrow2 = document.getElementById('txtArrow2');
-            var success = moveFloor(panel.innerText + arrow1.innerText + arrow2.innerText);
+            var success = parseFloor(getFloorUrl(), true);
             if (!success) {
                 window.location.reload(true);
             }
+        }
+
+        function onButtonShareClicked() {
+            var success = parseFloor(getFloorUrl(), false);
+            if (success) {
+                alert("Copied!");
+            }
+            else {
+                alert("Error!");
+            }
+        }
+
+        function getFloorUrl() {
+            var panel = document.getElementById('txtInput');
+            var arrow1 = document.getElementById('txtArrow1');
+            var arrow2 = document.getElementById('txtArrow2');
+            return panel.innerText + arrow1.innerText + arrow2.innerText;
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+            }
+            catch (err) {}
+
+            document.body.removeChild(textArea);
+        }
+        
+        function copyTextToClipboard(text) {
+            if (!navigator.clipboard) {
+                fallbackCopyTextToClipboard(text);
+                return;
+            }
+            navigator.clipboard.writeText(text);
         }
     </script>
 </body>
