@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raccoon Link</title>
+    <style>
+        body {
+            background-color: black;
+        }
+        * {
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .selectable {
+            user-select: text;
+            -webkit-touch-callout: text;
+            -webkit-user-select: text;
+            -khtml-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+        .inputBox {
+            display: inline-flex;
+            align-items: center;
+            background-color: #111;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+        }
+        #txtInput {
+            padding: 0.2em 0.2em 0.2em 0.5em;
+        }
+        .arrowBox {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-right: 0.5em;
+        }
+        .arrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 1.5em;
+            width: 1.5em;
+        }
+        button {
+            background-color: #222;
+            border: transparent;
+            text-align: center;
+            padding: 0;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+        }
+        button:hover {
+            background-color: #444;
+        }
+        button:focus {
+            outline: 0 !important;
+        }
+        button:active {
+            background-color: #777;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.9);
+        }
+        .btnGo {
+            margin-left: 1em;
+            width: 6em;
+        }
+        .btnBox button {
+            border-radius: 50%;
+            width: 2em;
+            height: 2em;
+        }
+        .btnBox .selected {
+            background-color: #777;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .btnBox .selected:active {
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.9);
+        }
+        .btnBox {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            background-color: #111;
+            display: inline-block;
+        }
+        .btnLine {
+            margin: 0.2em;
+        }
+        .bottomBox {
+            display: flex;
+            justify-content: center left;
+        }
+        .dial {
+            display: inline-flex;
+            align-items: flex-start;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background-color: #222;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .dial:hover {
+            background-color: #333;
+        }
+        .dial:hover .dialBar {
+            background: linear-gradient(#555, #333);
+        }
+        .dial:active {
+            background-color: #444;
+        }
+        .dial:active .dialBar {
+            background: linear-gradient(#555, #444);
+        }
+        .dialBar {
+            margin: 2px;
+            background: linear-gradient(#555, #222);
+            height: 50%;
+            width: 3px;
+        }
+    </style>
+    <script>
+        String.prototype.replaceAll = function(org, dest) {
+            return this.split(org).join(dest);
+        }
+
+        var param = location.search.substr(location.search.indexOf('?') + 1);
+        var kv = param.split('=');
+        if (kv.length == 2 && kv[0] == "floor") {
+            moveFloor(kv[1]);
+        }
+
+        var buttons = [
+            '1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+            'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И',
+        ];
+        var arrows = "↑↗→↘↓↙←↖";
+
+        function moveFloor(floor) {
+            var inputs = floor.split('-');
+            for (var i=0; i<inputs.length; ++i) {
+                inputs[i] = decodeURIComponent(inputs[i]);
+            }
+
+            var last = inputs[inputs.length - 1];
+            if (last.length < 3) {
+                return false;
+            }
+
+            var arrows = "↑↗→↘↓↙←↖"; // 8 방향.
+            var arrow1 = arrows.indexOf(last[last.length - 2]);
+            var arrow2 = arrows.indexOf(last[last.length - 1]);
+            if (arrow1 < 0 || arrow2 < 0)
+            {
+                return false;
+            }
+
+            inputs[inputs.length - 1] = last.substr(0, last.length - 2);
+
+            var buttons = [
+                '1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+                'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И',
+            ];
+            for (var i=0; i<inputs.length; ++i) {
+                // 알파벳을 키릴 문자로 치환.
+                inputs[i] = inputs[i]
+                    .replaceAll('A', 'А')
+                    .replaceAll('B', 'В')
+                    .replaceAll('E', 'Е');
+                // 인덱스로 변환.
+                var num = buttons.indexOf(inputs[i]);
+                if (num < 0) {
+                    return false;
+                }
+                inputs[i] = num;
+            }
+
+            var specialChars = "-_=/%#&?,$+*~\'()"; // 16개.
+            var url = "";
+
+            var offset = 97;
+            var btnOffset = 0;
+            var cmd = 0;
+            for (var i=0; i<inputs.length; ++i) {
+                var num = (inputs[i] + btnOffset) % buttons.length;
+                btnOffset = (btnOffset + 1 + num) % buttons.length;
+                if (num === buttons.length - 1) {
+                    if (url.length === 0) {
+                        offset = 48;
+                    }
+                    else if (url.charAt(url.length - 1) === '.') {
+                        url = url.substr(0, url.length - 1);
+
+                        if (offset === 97) {
+                            offset = 48;
+                        }
+                        else {
+                            offset = 97;
+                        }
+                    }
+                    else {
+                        url += '.';
+                    }
+                }
+                else {
+                    if (offset === 48 && num >= 10) {
+                        url += specialChars.charAt((num - 10) % specialChars.length);
+                    }
+                    else {
+                        url += String.fromCharCode(offset + num);
+                    }
+                }
+            }
+
+            var tldList = [
+                "aero", "arpa", "asia", "biz", "cat", "com", "coop", "edu", "gov", "info", "int", "jobs",
+                "moe", "mobi", "museum", "name", "net", "org", "post", "pro", "tel", "travel", "xxx",
+                "web", "shop", "site", "hotel", "music", "nyc", "film", "sport", "free", "love",
+                "blog", "money", "vip", "club", "earth", "online", "wine", "sex", "app", "design",
+                "today", "car", "law", "bio", "io", "bot", "dev", "link", "ltd", "corp", "inc",
+                "top", "loan", "xyz", "win", "men", "work", "news", "band", "cafe"
+            ]; // 63개 제한.
+
+            var tldIndex = arrow1 * 8 + arrow2;
+
+            var magicTld = 14;
+            if (tldIndex !== magicTld) {
+                if (tldIndex > magicTld) {
+                    tldIndex -= 1;
+                }
+                
+                if (url.charAt(url.length - 1) === '.') {
+                    url = url + tldList[tldIndex];
+                }
+                else {
+                    url = url + '.' + tldList[tldIndex];
+                }
+            }
+
+            if (url.indexOf('.') < 0) {
+                url += ".com";
+            }
+            else if (url.charAt(url.length - 1) == '.') {
+                url += "com";
+            }
+
+            url = "http://" + url;
+
+            window.location = url;
+
+            return true;
+        }
+    </script>
+</head>
+<body onload="onLoad();">
+    <h1>Raccoon Link</h1>
+    <div class="inputBox">
+        <span id="txtInput" class="selectable"></span>
+        <div class="arrowBox">
+            <div class="arrow">
+                <span id="txtArrow1" class="selectable">↗</span>
+            </div>
+            <div class="arrow">
+                <span id="txtArrow2" class="selectable">←</span>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="btnBox">
+        <div class="btnLine">
+            <button onclick="onButtonClicked(this);">1</button>
+            <button onclick="onButtonClicked(this);">2</button>
+            <button onclick="onButtonClicked(this);">3</button>
+            <button onclick="onButtonClicked(this);">5</button>
+            <button onclick="onButtonClicked(this);">6</button>
+            <button onclick="onButtonClicked(this);">7</button>
+            <button onclick="onButtonClicked(this);">8</button>
+            <button onclick="onButtonClicked(this);">9</button>
+            <button onclick="onButtonClicked(this);">10</button>
+        </div>
+        <div class="btnLine">
+            <button onclick="onButtonClicked(this);">11</button>
+            <button onclick="onButtonClicked(this);">12</button>
+            <button onclick="onButtonClicked(this);">13</button>
+            <button onclick="onButtonClicked(this);">14</button>
+            <button onclick="onButtonClicked(this);">15</button>
+            <button onclick="onButtonClicked(this);">16</button>
+            <button onclick="onButtonClicked(this);">17</button>
+            <button onclick="onButtonClicked(this);">18</button>
+            <button onclick="onButtonClicked(this);">19</button>
+        </div>
+        <div class="btnLine">
+            <button onclick="onButtonClicked(this);">А</button>
+            <button onclick="onButtonClicked(this);">Б</button>
+            <button onclick="onButtonClicked(this);">В</button>
+            <button onclick="onButtonClicked(this);">Г</button>
+            <button onclick="onButtonClicked(this);">Д</button>
+            <button onclick="onButtonClicked(this);">Е</button>
+            <button onclick="onButtonClicked(this);">Ж</button>
+            <button onclick="onButtonClicked(this);">З</button>
+            <button onclick="onButtonClicked(this);">И</button>
+        </div>
+    </div>
+    <br>
+    <div class="bottomBox">
+        <div class="dial" id="dial1" onclick="onDialClicked(this);">
+            <div class="dialBar"></div>
+        </div>
+        <div class="dial" id="dial2" onclick="onDialClicked(this);">
+            <div class="dialBar"></div>
+        </div>
+        <button class="btnGo" onclick="onButtonGoClicked();">GO</button>
+    </div>
+    <script>
+        var arrowChars = "↑↗→↘↓↙←↖";
+        var dirDials = {};
+
+        function rotateDial(dial, dir) {
+            dirDials[dial.id] = dir;
+            var deg = dir * 45;
+            dial.style.transform = "rotate(" + deg + "deg)";
+
+            var arrow = null;
+            if (dial.id == 'dial1') {
+                arrow = document.getElementById('txtArrow1');
+            }
+            else if (dial.id == 'dial2') {
+                arrow = document.getElementById('txtArrow2');
+            }
+
+            if (arrow) {
+                arrow.innerText = arrowChars[dir % arrowChars.length];
+            }
+        }
+
+        function onLoad() {
+            rotateDial(document.getElementById('dial1'), 1);
+            rotateDial(document.getElementById('dial2'), 6);
+        }
+
+        function onButtonClicked(sender) {
+            var arrClasses = sender.className.split(" ");
+            if (arrClasses.indexOf('selected') < 0) {
+                sender.className += " selected";
+            }
+            var btn = sender.innerText;
+            var panel = document.getElementById('txtInput');
+            if (panel.innerText.length == 0) {
+                panel.innerText = btn;
+            }
+            else {
+                panel.innerText = panel.innerText + "-" + btn;
+            }
+        }
+
+        function onDialClicked(sender) {
+            var dir = dirDials[sender.id];
+            dir += 1;
+            if (dir >= 8) {
+                dir = 0;
+            }
+            rotateDial(sender, dir);
+        }
+
+        function onButtonGoClicked() {
+            var panel = document.getElementById('txtInput');
+            var arrow1 = document.getElementById('txtArrow1');
+            var arrow2 = document.getElementById('txtArrow2');
+            var success = moveFloor(panel.innerText + arrow1.innerText + arrow2.innerText);
+            if (!success) {
+                window.location.reload(true);
+            }
+        }
+    </script>
+</body>
+</html>
