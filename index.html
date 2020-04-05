@@ -260,7 +260,7 @@
                 window.location = url;
             }
             else {
-                copyTextToClipboard(location.origin + "/?floor=" + floor);
+                copyTextToClipboard(location.origin + location.pathname + "?floor=" + floor);
             }
 
             return true;
