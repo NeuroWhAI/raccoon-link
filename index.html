@@ -186,41 +186,77 @@
                 inputs[i] = num;
             }
 
-            var specialChars = "-_=/%#&?,$+*~\'()"; // 16개.
             var url = "";
 
-            var offset = 97;
-            var btnOffset = 0;
-            var cmd = 0;
+            var MODE_LOWER = 0;
+            var MODE_UPPER = 1;
+            var MODE_NUM = 2;
+            var MODE_SPECIAL = 3;
+
+            var SHORTCUT_LOWER = 'a';
+            var SHORTCUT_NUM = 'n';
+
+            var modeChars = {}; // 각 문자열 세트의 길이는 26.
+            modeChars[MODE_LOWER] = "abcdefghijklmnopqrstuvwxyz";
+            modeChars[MODE_UPPER] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            modeChars[MODE_NUM] = "0123456789ABCDEF%-_=/#&.()";
+            modeChars[MODE_SPECIAL] = ".,$+*~%?!\'\":;<>@[]\\^{}| " + SHORTCUT_LOWER + SHORTCUT_NUM;
+
+            var mode = MODE_LOWER;
+            var shifted = false;
+            var btnOffset = (arrow1 * 8 + arrow2) % buttons.length;
+
             for (var i=0; i<inputs.length; ++i) {
                 var num = (inputs[i] + btnOffset) % buttons.length;
-                btnOffset = (btnOffset + 1 + num) % buttons.length;
-                if (num === buttons.length - 1) {
-                    if (url.length === 0 || url.charAt(url.length - 1) === '.') {
-                        if (url.length > 0) {
-                            url = url.substr(0, url.length - 1);
-                        }
+                btnOffset = (btnOffset + 3 + num) % buttons.length;
 
-                        if (offset === 97) {
-                            offset = 48;
-                        }
-                        else if (offset === 48) {
-                            offset = 65;
-                        }
-                        else {
-                            offset = 97;
-                        }
+                if (num < buttons.length - 1) {
+                    var appChar = modeChars[mode].charAt(num);
+                    // 단축 모드 전환 처리.
+                    if (mode === MODE_SPECIAL && appChar === SHORTCUT_LOWER) {
+                        mode = MODE_LOWER;
+                    }
+                    else if (mode === MODE_SPECIAL && appChar === SHORTCUT_NUM) {
+                        mode = MODE_NUM;
                     }
                     else {
-                        url += '.';
+                        // URL 문자 추가.
+                        shifted = false;
+                        url += appChar;
                     }
                 }
                 else {
-                    if (offset === 48 && num >= 10) {
-                        url += specialChars.charAt((num - 10) % specialChars.length);
+                    if (shifted) {
+                        // 연속 전환 시 모드.
+                        shifted = false;
+                        if (mode === MODE_LOWER) {
+                            mode = MODE_UPPER;
+                        }
+                        else if (mode === MODE_NUM) {
+                            mode = MODE_SPECIAL;
+                        }
+                        else if (mode === MODE_UPPER) {
+                            mode = MODE_LOWER;
+                        }
+                        else if (mode === MODE_SPECIAL) {
+                            mode = MODE_NUM;
+                        }
                     }
                     else {
-                        url += String.fromCharCode(offset + num);
+                        // 모드 전환.
+                        shifted = true;
+                        if (mode === MODE_LOWER) {
+                            mode = MODE_NUM;
+                        }
+                        else if (mode === MODE_UPPER) {
+                            mode = MODE_SPECIAL;
+                        }
+                        else if (mode === MODE_NUM) {
+                            mode = MODE_LOWER;
+                        }
+                        else if (mode === MODE_SPECIAL) {
+                            mode = MODE_UPPER;
+                        }
                     }
                 }
             }
