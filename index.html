@@ -196,14 +196,16 @@
                 var num = (inputs[i] + btnOffset) % buttons.length;
                 btnOffset = (btnOffset + 1 + num) % buttons.length;
                 if (num === buttons.length - 1) {
-                    if (url.length === 0) {
-                        offset = 48;
-                    }
-                    else if (url.charAt(url.length - 1) === '.') {
-                        url = url.substr(0, url.length - 1);
+                    if (url.length === 0 || url.charAt(url.length - 1) === '.') {
+                        if (url.length > 0) {
+                            url = url.substr(0, url.length - 1);
+                        }
 
                         if (offset === 97) {
                             offset = 48;
+                        }
+                        else if (offset === 48) {
+                            offset = 65;
                         }
                         else {
                             offset = 97;
