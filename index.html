@@ -260,7 +260,12 @@
             url = "http://" + url;
 
             if (moveOrCopy) {
-                window.location = url;
+                try {
+                    window.location = url;
+                }
+                catch {
+                    return false;
+                }
             }
             else {
                 var shareUrl = location.origin + location.pathname + "?floor=" + floor;
