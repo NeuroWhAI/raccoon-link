@@ -128,6 +128,7 @@
             width: 3px;
         }
     </style>
+    <script src="clipboard.min.js"></script>
     <script>
         String.prototype.replaceAll = function(org, dest) {
             return this.split(org).join(dest);
@@ -260,7 +261,20 @@
                 window.location = url;
             }
             else {
-                copyTextToClipboard(location.origin + location.pathname + "?floor=" + floor);
+                var shareUrl = location.origin + location.pathname + "?floor=" + floor;
+                
+                var btnShare = document.querySelector('.btnShare');
+                btnShare.setAttribute('data-clipboard-text', shareUrl);
+
+                var clipboard = new ClipboardJS('.btnShare');
+                clipboard.on('success', function(e) {
+                    clipboard.destroy();
+                    alert("Copied!");
+                });
+                clipboard.on('error', function(e) {
+                    clipboard.destroy();
+                    prompt("Copy this.", shareUrl);
+                });
             }
 
             return true;
@@ -325,7 +339,7 @@
             <div class="dialBar"></div>
         </div>
         <button class="btnGo" onclick="onButtonGoClicked();">GO</button>
-        <button class="btnShare" onclick="onButtonShareClicked();">SHARE</button>
+        <button class="btnShare" onclick="onButtonShareClicked();" data-clipboard-text="">SHARE</button>
     </div>
     <script>
         var arrowChars = "↑↗→↘↓↙←↖";
@@ -387,10 +401,7 @@
 
         function onButtonShareClicked() {
             var success = parseFloor(getFloorUrl(), false);
-            if (success) {
-                alert("Copied!");
-            }
-            else {
+            if (!success) {
                 alert("Error!");
             }
         }
@@ -400,47 +411,6 @@
             var arrow1 = document.getElementById('txtArrow1');
             var arrow2 = document.getElementById('txtArrow2');
             return panel.innerText + arrow1.innerText + arrow2.innerText;
-        }
-
-        function fallbackCopyTextToClipboard(text) {
-            var textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.contentEditable = true;
-            textArea.readOnly = false;
-            
-            // Avoid scrolling to bottom
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-            
-            document.body.appendChild(textArea);
-            
-            var range = document.createRange();
-            range.selectNodeContents(textArea);
-
-            var selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            textArea.focus();
-            textArea.select();
-            textArea.setSelectionRange(0, text.length);
-
-            try {
-                document.execCommand('copy');
-                textArea.blur();
-            }
-            catch (err) {}
-
-            document.body.removeChild(textArea);
-        }
-        
-        function copyTextToClipboard(text) {
-            if (!navigator.clipboard) {
-                fallbackCopyTextToClipboard(text);
-                return;
-            }
-            navigator.clipboard.writeText(text);
         }
     </script>
 </body>
